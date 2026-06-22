@@ -86,9 +86,9 @@ const {
   .select("*")
   .eq("active", true)
   .maybeSingle();
-
 console.log("shopQR =", shopQR);
 console.log("shopQRError =", shopQRError);
+console.log("SCANNED QR =", decodedText);
 
 if (shopQRError) {
   setMessage(shopQRError.message);
