@@ -1,7 +1,26 @@
+import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-
+import { supabase } from "../lib/supabase";
 export default function ShopQR() {
-  const shopToken = "JUICE-CLUB-2026";
+const [shopToken, setShopToken] =
+  useState("");
+
+useEffect(() => {
+  loadQR();
+}, []);
+
+const loadQR = async () => {
+  const { data } =
+    await supabase
+      .from("shop_qr")
+      .select("*")
+      .eq("active", true)
+      .single();
+
+  if (data) {
+    setShopToken(data.qr_token);
+  }
+};
 
   return (
     <div

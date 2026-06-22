@@ -125,16 +125,33 @@ export default function Scan() {
         return;
       }
 
-      await supabase
-        .from("scan_history")
-        .insert([
-          {
-            customer_id:
-              customer.id,
-            stamp_number:
-              newStamp,
-          },
-        ]);
+      const scanUID =
+  "SCN-" + Date.now();
+
+await supabase
+  .from("scan_history")
+  .insert([
+    {
+      scan_uid: scanUID,
+      customer_id:
+        customer.id,
+      stamp_number:
+        newStamp,
+    },
+  ]);
+
+  const newToken =
+  "JUICE-" +
+  Math.random()
+    .toString(36)
+    .substring(2, 12);
+
+await supabase
+  .from("shop_qr")
+  .update({
+    qr_token: newToken,
+  })
+  .eq("id", shopQR.id);
 
       const updatedCustomer =
         {
