@@ -78,20 +78,28 @@ export default function Scan() {
         );
         return;
       }
+const {
+  data: shopQR,
+  error: shopQRError,
+} = await supabase
+  .from("shop_qr")
+  .select("*")
+  .eq("active", true)
+  .maybeSingle();
 
-      const { data: shopQR } =
-        await supabase
-          .from("shop_qr")
-          .select("*")
-          .eq("active", true)
-          .single();
+console.log("shopQR =", shopQR);
+console.log("shopQRError =", shopQRError);
 
-      if (!shopQR) {
-        setMessage(
-          "Shop QR not found"
-        );
-        return;
-      }
+if (shopQRError) {
+  setMessage(shopQRError.message);
+  return;
+}
+
+if (!shopQR) {
+  setMessage("No active Shop QR found");
+  return;
+}
+
 
       if (
         decodedText !==
