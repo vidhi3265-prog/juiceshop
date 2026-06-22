@@ -83,31 +83,26 @@ const {
   error: shopQRError,
 } = await supabase
   .from("shop_qr")
-  .select("*")
-  .eq("active", true)
-  .maybeSingle();
-console.log("shopQR =", shopQR);
-console.log("shopQRError =", shopQRError);
+  .select("*");
+
+console.log("ALL SHOP QR =", shopQR);
+console.log("ERROR =", shopQRError);
 console.log("SCANNED QR =", decodedText);
 
-if (shopQRError) {
-  setMessage(shopQRError.message);
+if (!shopQR || shopQR.length === 0) {
+  setMessage("No rows found in shop_qr");
   return;
 }
 
-if (!shopQR) {
-  setMessage("No active Shop QR found");
-  return;
-}
+const activeQR = shopQR[0];
 
 console.log(
   "DATABASE QR =",
-  shopQR.qr_token
+  activeQR.qr_token
 );
-
       if (
         decodedText !==
-        shopQR.qr_token
+        activeQR.qr_token
       ) {
         setMessage(
           "Invalid QR Code"
@@ -163,7 +158,7 @@ await supabase
   .update({
     qr_token: newToken,
   })
-  .eq("id", shopQR.id);
+  .eq("id", activeQR.id);
 
       const updatedCustomer =
         {
