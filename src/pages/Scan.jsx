@@ -100,6 +100,10 @@ if (!shopQR) {
   return;
 }
 
+console.log(
+  "DATABASE QR =",
+  shopQR.qr_token
+);
 
       if (
         decodedText !==
