@@ -153,18 +153,25 @@ await supabase
     .toString(36)
     .substring(2, 12);
 
-await supabase
-  .from("shop_qr")
-  .update({
-    qr_token: newToken,
-  })
-  .eq("id", activeQR.id);
+const { error: historyError } =
+  await supabase
+    .from("scan_history")
+    .insert([
+      {
+        scan_uid: scanUID,
+        customer_id: customer.id,
+        stamp_number: newStamp,
+      },
+    ]);
 
-      const updatedCustomer =
-        {
-          ...customer,
-          stamps: newStamp,
-        };
+console.log(
+  "History Insert Error =",
+  historyError
+);
+
+if (historyError) {
+  console.error(historyError);
+}
 
       localStorage.setItem(
         "customer",
