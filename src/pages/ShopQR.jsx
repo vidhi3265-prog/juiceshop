@@ -1,26 +1,58 @@
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import { supabase } from "../lib/supabase";
+
 export default function ShopQR() {
-const [shopToken, setShopToken] =
-  useState("");
+  const [shopToken, setShopToken] =
+    useState("");
 
-useEffect(() => {
-  loadQR();
-}, []);
+  useEffect(() => {
+    loadQR();
 
-const loadQR = async () => {
-  const { data } =
-    await supabase
-      .from("shop_qr")
-      .select("*")
-      .eq("active", true)
-      .single();
+    const channel = supabase
+      .channel("shop_qr_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "shop_qr",
+        },
+        (payload) => {
+          console.log(
+            "QR updated:",
+            payload
+          );
 
-  if (data) {
-    setShopToken(data.qr_token);
-  }
-};
+          if (payload.new?.qr_token) {
+            setShopToken(
+              payload.new.qr_token
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadQR = async () => {
+    const { data, error } =
+      await supabase
+        .from("shop_qr")
+        .select("*")
+        .eq("active", true)
+        .maybeSingle();
+
+    console.log("SHOP QR =", data);
+    console.log("QR ERROR =", error);
+
+    if (data) {
+      setShopToken(data.qr_token);
+    }
+  };
 
   return (
     <div
@@ -46,13 +78,7 @@ const loadQR = async () => {
             "0 15px 35px rgba(0,0,0,0.15)",
         }}
       >
-        <h1
-          style={{
-            marginBottom: "10px",
-          }}
-        >
-          🍹 Juice Club
-        </h1>
+        <h1>🍹 Juice Club</h1>
 
         <h3
           style={{
@@ -63,19 +89,23 @@ const loadQR = async () => {
           Scan To Collect Stamp
         </h3>
 
-        <div
-          style={{
-            background: "#fff",
-            padding: "20px",
-            display: "inline-block",
-            borderRadius: "20px",
-          }}
-        >
-          <QRCode
-            value={shopToken}
-            size={250}
-          />
-        </div>
+        {shopToken ? (
+          <div
+            style={{
+              background: "#fff",
+              padding: "20px",
+              display: "inline-block",
+              borderRadius: "20px",
+            }}
+          >
+            <QRCode
+              value={shopToken}
+              size={250}
+            />
+          </div>
+        ) : (
+          <p>Loading QR...</p>
+        )}
 
         <p
           style={{
@@ -93,6 +123,7 @@ const loadQR = async () => {
             padding: "12px",
             background: "#f5f5f5",
             borderRadius: "10px",
+            wordBreak: "break-all",
           }}
         >
           QR Token:

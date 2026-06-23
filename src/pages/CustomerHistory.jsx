@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 export default function CustomerHistory() {
+  const navigate = useNavigate();
+
   const [customer, setCustomer] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +14,10 @@ export default function CustomerHistory() {
       localStorage.getItem("customer")
     );
 
-    console.log("Saved Customer =", savedCustomer);
+    console.log(
+      "Saved Customer =",
+      savedCustomer
+    );
 
     if (savedCustomer) {
       setCustomer(savedCustomer);
@@ -23,14 +29,24 @@ export default function CustomerHistory() {
 
   const loadHistory = async (customerId) => {
     try {
-      const { data, error } = await supabase
-        .from("scan_history")
-        .select("*")
-        .eq("customer_id", customerId)
-        .order("id", { ascending: false });
+      const { data, error } =
+        await supabase
+          .from("scan_history")
+          .select("*")
+          .eq("customer_id", customerId)
+          .order("id", {
+            ascending: false,
+          });
 
-      console.log("CUSTOMER HISTORY =", data);
-      console.log("HISTORY ERROR =", error);
+      console.log(
+        "CUSTOMER HISTORY =",
+        data
+      );
+
+      console.log(
+        "HISTORY ERROR =",
+        error
+      );
 
       if (error) {
         console.error(error);
@@ -65,15 +81,41 @@ export default function CustomerHistory() {
     >
       <div
         style={{
-          maxWidth: "700px",
+          maxWidth: "800px",
           margin: "0 auto",
           background: "white",
           borderRadius: "25px",
           padding: "25px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+          boxShadow:
+            "0 10px 25px rgba(0,0,0,0.08)",
         }}
       >
-        <h1>📜 Loyalty History</h1>
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: "15px",
+          }}
+        >
+          📜 Loyalty History
+        </h1>
+
+        <button
+          onClick={() =>
+            navigate("/home")
+          }
+          style={{
+            padding: "10px 16px",
+            borderRadius: "10px",
+            border: "none",
+            background: "#ff7b00",
+            color: "white",
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginBottom: "20px",
+          }}
+        >
+          🏠 Back To Home
+        </button>
 
         <div
           style={{
@@ -85,11 +127,13 @@ export default function CustomerHistory() {
           }}
         >
           <p>
-            <strong>Name:</strong> {customer.name}
+            <strong>Name:</strong>{" "}
+            {customer.name}
           </p>
 
           <p>
-            <strong>Phone:</strong> {customer.phone}
+            <strong>Phone:</strong>{" "}
+            {customer.phone}
           </p>
 
           <p>
@@ -98,12 +142,22 @@ export default function CustomerHistory() {
           </p>
         </div>
 
-        <h2 style={{ textAlign: "center" }}>
+        <h2
+          style={{
+            textAlign: "center",
+          }}
+        >
           🍹 Stamp Activity
         </h2>
 
         {loading ? (
-          <p>Loading...</p>
+          <p
+            style={{
+              textAlign: "center",
+            }}
+          >
+            Loading...
+          </p>
         ) : history.length === 0 ? (
           <div
             style={{
@@ -123,6 +177,7 @@ export default function CustomerHistory() {
             style={{
               borderCollapse: "collapse",
               textAlign: "center",
+              marginTop: "15px",
             }}
           >
             <thead>
@@ -139,15 +194,22 @@ export default function CustomerHistory() {
                 <tr key={item.id}>
                   <td>{item.id}</td>
 
-                  <td>{item.scan_uid || "-"}</td>
+                  <td>
+                    {item.scan_uid}
+                  </td>
 
                   <td>
                     {item.scan_date
-                      ? new Date(item.scan_date).toLocaleDateString()
+                      ? new Date(
+                          item.scan_date
+                        ).toLocaleDateString()
                       : "-"}
                   </td>
 
-                  <td>Stamp #{item.stamp_number}</td>
+                  <td>
+                    Stamp #
+                    {item.stamp_number}
+                  </td>
                 </tr>
               ))}
             </tbody>
