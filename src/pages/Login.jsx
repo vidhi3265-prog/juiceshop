@@ -12,19 +12,28 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!name || !phone) {
+    if (!name.trim() || !phone.trim()) {
       alert("Please fill all fields");
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    const canadianRegex =
+      /^(403|587|825|368|780|236|250|604|672|778|204|431|584|506|428|709|879|902|782|226|249|289|343|365|416|437|519|548|613|647|683|705|742|753|807|905|263|367|438|450|514|579|581|819|873|306|474|639)\d{7}$/;
+
+    if (!canadianRegex.test(cleanPhone)) {
+      alert("Please enter a valid  phone number");
       return;
     }
 
     setLoading(true);
 
-    const { data: existingCustomer } =
-      await supabase
-        .from("customers")
-        .select("*")
-        .eq("phone", phone)
-        .single();
+    const { data: existingCustomer } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("phone", cleanPhone)
+      .maybeSingle();
 
     if (existingCustomer) {
       localStorage.setItem(
@@ -41,8 +50,8 @@ export default function Login() {
       .from("customers")
       .insert([
         {
-          name,
-          phone,
+          name: name.trim(),
+          phone: cleanPhone,
           stamps: 0,
         },
       ])
@@ -56,11 +65,7 @@ export default function Login() {
       return;
     }
 
-    localStorage.setItem(
-      "customer",
-      JSON.stringify(data)
-    );
-
+    localStorage.setItem("customer", JSON.stringify(data));
     navigate("/home");
   };
 
@@ -71,8 +76,7 @@ export default function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background:
-          "linear-gradient(135deg,#ff7b00,#ff9f43)",
+        background: "linear-gradient(135deg,#ff7b00,#ff9f43)",
         padding: "20px",
       }}
     >
@@ -83,16 +87,10 @@ export default function Login() {
           maxWidth: "400px",
           borderRadius: "25px",
           padding: "30px",
-          boxShadow:
-            "0 15px 35px rgba(0,0,0,0.15)",
+          boxShadow: "0 15px 35px rgba(0,0,0,0.15)",
         }}
       >
-        <h1
-          style={{
-            textAlign: "center",
-            marginBottom: "10px",
-          }}
-        >
+        <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
           🍹 Juice Club
         </h1>
 
@@ -111,9 +109,7 @@ export default function Login() {
             type="text"
             placeholder="Your Name"
             value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
+            onChange={(e) => setName(e.target.value)}
             style={{
               width: "100%",
               padding: "14px",
@@ -125,12 +121,10 @@ export default function Login() {
           />
 
           <input
-            type="text"
-            placeholder="Phone Number"
+            type="tel"
+            placeholder=" Phone Number"
             value={phone}
-            onChange={(e) =>
-              setPhone(e.target.value)
-            }
+            onChange={(e) => setPhone(e.target.value)}
             style={{
               width: "100%",
               padding: "14px",
@@ -155,9 +149,7 @@ export default function Login() {
               cursor: "pointer",
             }}
           >
-            {loading
-              ? "Please Wait..."
-              : "Continue"}
+            {loading ? "Please Wait..." : "Continue"}
           </button>
         </form>
       </div>
