@@ -120,20 +120,34 @@ export default function Login() {
             }}
           />
 
-          <input
-            type="tel"
-            placeholder=" Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "14px",
-              marginBottom: "20px",
-              borderRadius: "12px",
-              border: "1px solid #ddd",
-              boxSizing: "border-box",
-            }}
-          />
+          <div style={{ display: "flex", marginBottom: "20px" }}>
+  <div
+    style={{
+      padding: "14px",
+      background: "#f3f4f6",
+      border: "1px solid #ddd",
+      borderRadius: "12px 0 0 12px",
+      fontWeight: "bold",
+    }}
+  >
+    🇨🇦 +1
+  </div>
+
+  <input
+    type="tel"
+    placeholder="Canadian Phone Number"
+    value={phone}
+    onChange={(e) => setPhone(e.target.value)}
+    style={{
+      flex: 1,
+      padding: "14px",
+      borderRadius: "0 12px 12px 0",
+      border: "1px solid #ddd",
+      borderLeft: "none",
+      boxSizing: "border-box",
+    }}
+  />
+</div>
 
           <button
             type="submit"
