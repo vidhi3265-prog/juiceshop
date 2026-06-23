@@ -78,16 +78,12 @@ export default function Scan() {
         );
         return;
       }
-const { data, error } = await supabase
-  .from("scan_history")
+const {
+  data: shopQR,
+  error: shopQRError,
+} = await supabase
+  .from("shop_qr")
   .select("*");
-
-console.log("ALL HISTORY =", data);
-console.log("HISTORY ERROR =", error);
-
-if (data) {
-  setHistory(data);
-}
 
 console.log("ALL SHOP QR =", shopQR);
 console.log("ERROR =", shopQRError);
