@@ -65,41 +65,58 @@ export default function Scan() {
     setLoading(true);
 
     try {
-      const customer =
-        JSON.parse(
-          localStorage.getItem(
-            "customer"
-          )
-        );
+      const customer = JSON.parse(
+        localStorage.getItem(
+          "customer"
+        )
+      );
 
       if (!customer) {
         setMessage(
           "Please login first"
         );
+        setLoading(false);
         return;
       }
-const {
-  data: shopQR,
-  error: shopQRError,
-} = await supabase
-  .from("shop_qr")
-  .select("*");
 
-console.log("ALL SHOP QR =", shopQR);
-console.log("ERROR =", shopQRError);
-console.log("SCANNED QR =", decodedText);
+      const {
+        data: shopQR,
+        error: shopQRError,
+      } = await supabase
+        .from("shop_qr")
+        .select("*");
 
-if (!shopQR || shopQR.length === 0) {
-  setMessage("No rows found in shop_qr");
-  return;
-}
+      console.log(
+        "ALL SHOP QR =",
+        shopQR
+      );
+      console.log(
+        "ERROR =",
+        shopQRError
+      );
+      console.log(
+        "SCANNED QR =",
+        decodedText
+      );
 
-const activeQR = shopQR[0];
+      if (
+        !shopQR ||
+        shopQR.length === 0
+      ) {
+        setMessage(
+          "No rows found in shop_qr"
+        );
+        setLoading(false);
+        return;
+      }
 
-console.log(
-  "DATABASE QR =",
-  activeQR.qr_token
-);
+      const activeQR = shopQR[0];
+
+      console.log(
+        "DATABASE QR =",
+        activeQR.qr_token
+      );
+
       if (
         decodedText !==
         activeQR.qr_token
@@ -107,71 +124,85 @@ console.log(
         setMessage(
           "Invalid QR Code"
         );
+        setLoading(false);
         return;
       }
 
       const newStamp =
         (customer.stamps || 0) + 1;
 
-      const { error } =
-        await supabase
-          .from("customers")
-          .update({
-            stamps: newStamp,
-          })
-          .eq(
-            "id",
-            customer.id
-          );
+      const {
+        error: customerError,
+      } = await supabase
+        .from("customers")
+        .update({
+          stamps: newStamp,
+        })
+        .eq(
+          "id",
+          customer.id
+        );
 
-      if (error) {
-        console.error(error);
+      if (customerError) {
+        console.error(
+          customerError
+        );
         setMessage(
           "Failed to update stamp"
         );
+        setLoading(false);
         return;
       }
 
       const scanUID =
-  "SCN-" + Date.now();
+        "SCN-" + Date.now();
 
-await supabase
-  .from("scan_history")
-  .insert([
-    {
-      scan_uid: scanUID,
-      customer_id:
-        customer.id,
-      stamp_number:
-        newStamp,
-    },
-  ]);
+      const {
+        error: historyError,
+      } = await supabase
+        .from("scan_history")
+        .insert([
+          {
+            scan_uid: scanUID,
+            customer_id:
+              customer.id,
+            stamp_number:
+              newStamp,
+          },
+        ]);
 
-  const newToken =
-  "JUICE-" +
-  Math.random()
-    .toString(36)
-    .substring(2, 12);
+      console.log(
+        "History Insert Error =",
+        historyError
+      );
 
-const { error: historyError } =
-  await supabase
-    .from("scan_history")
-    .insert([
-      {
-        scan_uid: scanUID,
-        customer_id: customer.id,
-        stamp_number: newStamp,
-      },
-    ]);
+      if (historyError) {
+        console.error(
+          historyError
+        );
+      }
 
-console.log(
-  "History Insert Error =",
-  historyError
-);
+      const newToken =
+        "JUICE-" +
+        Math.random()
+          .toString(36)
+          .substring(2, 12);
 
-if (historyError) {
-  console.error(historyError);
-}
+      await supabase
+        .from("shop_qr")
+        .update({
+          qr_token: newToken,
+        })
+        .eq(
+          "id",
+          activeQR.id
+        );
+
+      const updatedCustomer =
+        {
+          ...customer,
+          stamps: newStamp,
+        };
 
       localStorage.setItem(
         "customer",
@@ -225,9 +256,14 @@ if (historyError) {
           📷 Scan QR
         </h1>
 
-<button onClick={() => navigate("/home")}>
-  🏠 Back To Home
-</button>
+        <button
+          onClick={() =>
+            navigate("/home")
+          }
+        >
+          🏠 Back To Home
+        </button>
+
         <p
           style={{
             textAlign: "center",
