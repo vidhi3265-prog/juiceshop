@@ -11,10 +11,7 @@ export default function CustomerHistory() {
       localStorage.getItem("customer")
     );
 
-    console.log(
-      "Saved Customer =",
-      savedCustomer
-    );
+    console.log("Saved Customer =", savedCustomer);
 
     if (savedCustomer) {
       setCustomer(savedCustomer);
@@ -26,32 +23,25 @@ export default function CustomerHistory() {
 
   const loadHistory = async (customerId) => {
     try {
-      const { data, error } =
-        await supabase
-          .from("scan_history")
-          .select("*")
-          .order("id", {
-            ascending: false,
-          });
+      const { data, error } = await supabase
+        .from("scan_history")
+        .select("*")
+        .eq("customer_id", customerId)
+        .order("id", { ascending: false });
 
-      console.log(
-        "ALL HISTORY =",
-        data
-      );
-
-      console.log(
-        "HISTORY ERROR =",
-        error
-      );
+      console.log("CUSTOMER HISTORY =", data);
+      console.log("HISTORY ERROR =", error);
 
       if (error) {
         console.error(error);
+        setHistory([]);
         return;
       }
 
       setHistory(data || []);
     } catch (err) {
       console.error(err);
+      setHistory([]);
     }
 
     setLoading(false);
@@ -80,8 +70,7 @@ export default function CustomerHistory() {
           background: "white",
           borderRadius: "25px",
           padding: "25px",
-          boxShadow:
-            "0 10px 25px rgba(0,0,0,0.08)",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
         }}
       >
         <h1>📜 Loyalty History</h1>
@@ -92,16 +81,15 @@ export default function CustomerHistory() {
             padding: "15px",
             borderRadius: "12px",
             marginBottom: "20px",
+            textAlign: "center",
           }}
         >
           <p>
-            <strong>Name:</strong>{" "}
-            {customer.name}
+            <strong>Name:</strong> {customer.name}
           </p>
 
           <p>
-            <strong>Phone:</strong>{" "}
-            {customer.phone}
+            <strong>Phone:</strong> {customer.phone}
           </p>
 
           <p>
@@ -110,7 +98,9 @@ export default function CustomerHistory() {
           </p>
         </div>
 
-        <h2>🍹 Stamp Activity</h2>
+        <h2 style={{ textAlign: "center" }}>
+          🍹 Stamp Activity
+        </h2>
 
         {loading ? (
           <p>Loading...</p>
@@ -120,6 +110,7 @@ export default function CustomerHistory() {
               padding: "20px",
               background: "#f3f4f6",
               borderRadius: "12px",
+              textAlign: "center",
             }}
           >
             No stamp history found.
@@ -131,13 +122,14 @@ export default function CustomerHistory() {
             cellPadding="10"
             style={{
               borderCollapse: "collapse",
+              textAlign: "center",
             }}
           >
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Scan UID</th>
-                <th>Customer ID</th>
+                <th>Date</th>
                 <th>Stamp</th>
               </tr>
             </thead>
@@ -146,11 +138,16 @@ export default function CustomerHistory() {
               {history.map((item) => (
                 <tr key={item.id}>
                   <td>{item.id}</td>
-                  <td>{item.scan_uid}</td>
-                  <td>{item.customer_id}</td>
+
+                  <td>{item.scan_uid || "-"}</td>
+
                   <td>
-                    Stamp #{item.stamp_number}
+                    {item.scan_date
+                      ? new Date(item.scan_date).toLocaleDateString()
+                      : "-"}
                   </td>
+
+                  <td>Stamp #{item.stamp_number}</td>
                 </tr>
               ))}
             </tbody>
