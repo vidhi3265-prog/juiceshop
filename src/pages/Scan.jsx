@@ -5,19 +5,15 @@ import { useNavigate } from "react-router-dom";
 
 export default function Scan() {
   const scannerRef = useRef(null);
+  const isProcessingRef = useRef(false);
 
-  const [message, setMessage] =
-    useState("Scan Shop QR");
-
-  const [loading, setLoading] =
-    useState(false);
+  const [message, setMessage] = useState("Scan Shop QR");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    scannerRef.current =
-      new Html5Qrcode("reader");
-
+    scannerRef.current = new Html5Qrcode("reader");
     startScanner();
 
     return () => {
@@ -38,9 +34,7 @@ export default function Scan() {
       );
     } catch (err) {
       console.error(err);
-      setMessage(
-        "Camera could not start"
-      );
+      setMessage("Camera could not start");
     }
   };
 
@@ -57,163 +51,103 @@ export default function Scan() {
     }
   };
 
-  const onScanSuccess = async (
-    decodedText
-  ) => {
-    if (loading) return;
+  const onScanSuccess = async (decodedText) => {
+    if (isProcessingRef.current) return;
 
+    isProcessingRef.current = true;
     setLoading(true);
 
     try {
       const customer = JSON.parse(
-        localStorage.getItem(
-          "customer"
-        )
+        localStorage.getItem("customer")
       );
 
       if (!customer) {
-        setMessage(
-          "Please login first"
-        );
-        setLoading(false);
+        setMessage("Please login first");
         return;
       }
 
-      const {
-        data: shopQR,
-        error: shopQRError,
-      } = await supabase
-        .from("shop_qr")
-        .select("*");
+      const { data: shopQR, error: shopQRError } =
+        await supabase
+          .from("shop_qr")
+          .select("*")
+          .limit(1)
+          .single();
 
-      console.log(
-        "ALL SHOP QR =",
-        shopQR
-      );
-      console.log(
-        "ERROR =",
-        shopQRError
-      );
-      console.log(
-        "SCANNED QR =",
-        decodedText
-      );
+      console.log("SHOP QR =", shopQR);
+      console.log("SHOP QR ERROR =", shopQRError);
+      console.log("SCANNED QR =", decodedText);
 
-      if (
-        !shopQR ||
-        shopQR.length === 0
-      ) {
-        setMessage(
-          "No rows found in shop_qr"
-        );
-        setLoading(false);
+      if (shopQRError || !shopQR) {
+        setMessage("No active Shop QR found");
         return;
       }
 
-      const activeQR = shopQR[0];
-
-      console.log(
-        "DATABASE QR =",
-        activeQR.qr_token
-      );
-
-      if (
-        decodedText !==
-        activeQR.qr_token
-      ) {
-        setMessage(
-          "Invalid QR Code"
-        );
-        setLoading(false);
+      if (decodedText !== shopQR.qr_token) {
+        setMessage("Invalid QR Code");
         return;
       }
 
-      const newStamp =
-        (customer.stamps || 0) + 1;
+      const newStamp = (customer.stamps || 0) + 1;
 
-      const {
-        error: customerError,
-      } = await supabase
+      const { error: customerError } = await supabase
         .from("customers")
-        .update({
-          stamps: newStamp,
-        })
-        .eq(
-          "id",
-          customer.id
-        );
+        .update({ stamps: newStamp })
+        .eq("id", customer.id);
 
       if (customerError) {
-        console.error(
-          customerError
-        );
-        setMessage(
-          "Failed to update stamp"
-        );
-        setLoading(false);
+        console.error(customerError);
+        setMessage("Failed to update stamp");
         return;
       }
 
-      const scanUID =
-        "SCN-" + Date.now();
+      const scanUID = "SCN-" + Date.now();
 
       const {
+        data: historyData,
         error: historyError,
       } = await supabase
         .from("scan_history")
         .insert([
           {
             scan_uid: scanUID,
-            customer_id:
-              customer.id,
-            stamp_number:
-              newStamp,
+            customer_id: customer.id,
+            stamp_number: newStamp,
+            scan_date: new Date()
+              .toISOString()
+              .split("T")[0],
           },
-        ]);
+        ])
+        .select();
 
-      console.log(
-        "History Insert Error =",
-        historyError
-      );
+      console.log("HISTORY DATA =", historyData);
+      console.log("HISTORY ERROR =", historyError);
 
       if (historyError) {
-        console.error(
-          historyError
-        );
+        setMessage(historyError.message);
+        return;
       }
 
       const newToken =
         "JUICE-" +
-        Math.random()
-          .toString(36)
-          .substring(2, 12);
+        Math.random().toString(36).substring(2, 12);
 
       await supabase
         .from("shop_qr")
-        .update({
-          qr_token: newToken,
-        })
-        .eq(
-          "id",
-          activeQR.id
-        );
+        .update({ qr_token: newToken })
+        .eq("id", shopQR.id);
 
-      const updatedCustomer =
-        {
-          ...customer,
-          stamps: newStamp,
-        };
+      const updatedCustomer = {
+        ...customer,
+        stamps: newStamp,
+      };
 
       localStorage.setItem(
         "customer",
-        JSON.stringify(
-          updatedCustomer
-        )
+        JSON.stringify(updatedCustomer)
       );
 
-      setMessage(
-        `✅ Stamp Added (${newStamp}/10)`
-      );
+      setMessage(`✅ Stamp Added (${newStamp}/10)`);
 
       await stopScanner();
 
@@ -222,12 +156,11 @@ export default function Scan() {
       }, 2000);
     } catch (err) {
       console.error(err);
-      setMessage(
-        "Error adding stamp"
-      );
+      setMessage("Error adding stamp");
+    } finally {
+      setLoading(false);
+      isProcessingRef.current = false;
     }
-
-    setLoading(false);
   };
 
   return (
@@ -248,19 +181,11 @@ export default function Scan() {
           borderRadius: "25px",
         }}
       >
-        <h1
-          style={{
-            textAlign: "center",
-          }}
-        >
+        <h1 style={{ textAlign: "center" }}>
           📷 Scan QR
         </h1>
 
-        <button
-          onClick={() =>
-            navigate("/home")
-          }
-        >
+        <button onClick={() => navigate("/home")}>
           🏠 Back To Home
         </button>
 
@@ -275,9 +200,7 @@ export default function Scan() {
 
         <div
           id="reader"
-          style={{
-            marginTop: "20px",
-          }}
+          style={{ marginTop: "20px" }}
         ></div>
 
         <div
@@ -287,7 +210,7 @@ export default function Scan() {
             fontWeight: "bold",
           }}
         >
-          {message}
+          {loading ? "Processing..." : message}
         </div>
       </div>
     </div>
