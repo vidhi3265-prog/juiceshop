@@ -24,13 +24,17 @@ if (savedCustomer) {
 
 const loadHistory = async (customerId) => {
 try {
-const { data, error } = await supabase
-.from("scan_history")
-.select("*")
-.eq("customer_id", customerId)
-.order("id", {
-ascending: false,
-});
+const { data, error } =
+  await supabase
+    .from("scan_history")
+    .select("*");
+
+console.log("ALL HISTORY =", data);
+console.log("ERROR =", error);
+
+if (data) {
+  setHistory(data);
+}
 
   console.log("History Data =", data);
   console.log("History Error =", error);
